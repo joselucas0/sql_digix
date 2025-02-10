@@ -146,3 +146,18 @@ JOIN
     Engenherio Eng ON P.id_responsavel = Eng.id_pessoa
 JOIN 
     Pessoa ON Eng.id_pessoa = Pessoa.id_pessoa;
+
+-- Listar todas as unidades residenciais com seus proprietários e endereços, ordenando por metragem da unidade
+SELECT 
+    UR.id_unidade,
+    UR.metragem_unidade,
+    P.nome AS nome_proprietario,
+    E.endereco
+FROM 
+    Unidade_Residencial UR
+JOIN 
+    Pessoa P ON UR.id_proprietario = P.id_pessoa  
+JOIN 
+    Edificacao E ON UR.id_edificacao = E.id_edificacao  
+ORDER BY 
+    UR.metragem_unidade;  
