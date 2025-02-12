@@ -100,5 +100,81 @@ DROP VIEW vpartida_classificacao;
 
 
 
+-- Funções Matemáticas
+-- Exemplos:
+SELECT ABS(-10); -- Retorna o valor absoluto do número
+SELECT ROUND(10.5); -- Arredonda o número para o valor mais próximo
+SELECT TRUNC(12.7); -- Retorna apenas a parte inteira do número (somente no PostgreSQL)
+SELECT TRUNCATE(12.7, 2); -- Seleciona quantas casas decimais deseja (somente no MySQL)
+SELECT POWER(2, 3); -- Retorna o valor exponencial (2 elevado a 3)
+SELECT LN(4); -- Retorna o logaritmo natural do número
+SELECT COS(30); -- Retorna o cosseno do ângulo em radianos
+SELECT ATAN(0.5); -- Retorna o arco da tangente
+SELECT ASINH(0.5); -- Retorna o arco do seno hiperbólico (somente no PostgreSQL)
+SELECT SIGN(50); -- Retorna o sinal do número (1 para positivo, -1 para negativo, 0 para zero)
+
+-- Funções embutidas de Manipulação de String
+SELECT CONCAT('afasf', 'fas'); -- Concatena as duas strings
+SELECT LENGTH('afasf'); -- Retorna o comprimento da string
+SELECT LOWER('GSD'); -- Converte todos os caracteres para minúsculo
+SELECT UPPER('dga'); -- Converte todos os caracteres para maiúsculo
+SELECT LTRIM(' egadg'); -- Remove espaços em branco à esquerda da string
+SELECT RTRIM('egadg '); -- Remove espaços em branco à direita da string
+SELECT LPAD('egadg', 10, '*'); -- Preenche a string à esquerda com os caracteres especificados até atingir o comprimento desejado
+SELECT RPAD('egadg', 10, '*'); -- Preenche a string à direita com os caracteres especificados até atingir o comprimento desejado
+SELECT REVERSE('fagfas'); -- Inverte a string
+
+
+
+-- Funções de Data
+SELECT CURRENT_DATE; -- Retorna a data atual
+SELECT EXTRACT(DAY FROM CURRENT_DATE); -- Extrai o dia da data atual
+SELECT AGE('2025-01-01', '2025-02-02'); -- Mostra a diferença entre as duas datas
+SELECT interval '1 day';
+
+CREATE FUNCTION soma(a integer, b integer) RETURNS integer AS $$ -- Declaro, coloco parâmetros e o que retornar
+BEGIN -- Começo a função
+    -- Corpo da função
+    RETURN a + b;
+END;
+$$ LANGUAGE plpgsql; -- Define a linguagem da função (PL/pgSQL)
+SELECT soma(10, 5); -- Retorna 15
+
+-- Função para inserir uma partida
+CREATE FUNCTION insere_partida(time_1 INT, time_2 INT, time_1_gols INT, time_2_gols INT) RETURNS VOID AS $$
+BEGIN
+    INSERT INTO partida(time_1, time_2, time_1_gols, time_2_gols) 
+    VALUES (time_1, time_2, time_1_gols, time_2_gols);
+END;
+$$ LANGUAGE plpgsql;
+
+-- Chamando a função
+SELECT insere_partida(1, 2, 1, 2);
+
+-- Função de consulta
+CREATE OR REPLACE FUNCTION consulta_time() RETURNS TABLE (id INT, nome VARCHAR) AS $$
+BEGIN
+    RETURN QUERY SELECT * FROM time;
+END;
+$$ LANGUAGE plpgsql;
+
+
+
+-- Função com variável interna
+-- PostgreSQL
+CREATE OR REPLACE FUNCTION consulta_vencedor_por_time(id_time integer) RETURNS varchar(50) AS $$
+DECLARE
+    vencedor varchar(50);
+BEGIN
+    SELECT CASE
+        WHEN time_1_gols > time_2_gols THEN (SELECT nome FROM time WHERE id = time_1)
+        WHEN time_1_gols < time_2_gols THEN (SELECT nome FROM time WHERE id = time_2)
+        ELSE 'Empate'
+    END INTO vencedor
+    FROM partida
+    WHERE time_1 = id_time OR time_2 = id_time;
+    RETURN vencedor;
+END;
+$$ LANGUAGE plpgsql;
 
 
