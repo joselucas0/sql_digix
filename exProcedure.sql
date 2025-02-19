@@ -206,3 +206,62 @@ BEGIN
     RAISE NOTICE 'Média de Memória RAM: %, Média de HD: %', media_memoria_ram, media_harddisk;
 END;
 $$;
+
+--7
+
+-- Antes de criar ou recriar a procedure, se ela já existir, é bom fazer o drop
+-- DROP PROCEDURE IF EXISTS Diagnostico_Maquina(INT);
+
+CREATE OR REPLACE PROCEDURE Diagnostico_Maquina(
+    IN p_id_maquina INT
+)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_hd_total     INT;  -- HD total da máquina
+    v_ram_total    INT;  -- RAM total da máquina
+    v_hd_usado     INT;  -- Soma do HD dos softwares instalados
+    v_ram_usado    INT;  -- Soma da RAM dos softwares instalados
+BEGIN
+    -- 1) Obter informações da máquina
+    SELECT HardDisk, Memoria_Ram
+      INTO v_hd_total, v_ram_total
+      FROM Maquina
+     WHERE Id_Maquina = p_id_maquina;
+
+    IF NOT FOUND THEN
+        RAISE NOTICE 'Máquina com ID % não encontrada.', p_id_maquina;
+        RETURN;
+    END IF;
+
+    -- 2) Calcular o uso total de HD e RAM dos softwares instalados nessa máquina
+    SELECT COALESCE(SUM(s.HardDisk), 0),
+           COALESCE(SUM(s.Memoria_Ram), 0)
+      INTO v_hd_usado, v_ram_usado
+      FROM Software s
+     WHERE s.Fk_Maquina = p_id_maquina;
+
+    -- 3) Exibir as informações atuais
+    RAISE NOTICE 'Diagnóstico da Máquina %:', p_id_maquina;
+    RAISE NOTICE '  HD total: %, HD usado pelos softwares: %', v_hd_total, v_hd_usado;
+    RAISE NOTICE '  RAM total: %, RAM usada pelos softwares: %', v_ram_total, v_ram_usado;
+
+    -- 4) Verificar se há recurso suficiente de HD
+    IF v_hd_usado > v_hd_total THEN
+        RAISE NOTICE '  O HD atual não é suficiente para os softwares instalados.';
+        RAISE NOTICE '  Sugerimos um upgrade de HD (atual: %, necessário: %).', v_hd_total, v_hd_usado;
+    ELSE
+        RAISE NOTICE '  O HD atual é suficiente para os softwares instalados.';
+    END IF;
+
+    -- 5) Verificar se há recurso suficiente de RAM
+    IF v_ram_usado > v_ram_total THEN
+        RAISE NOTICE '  A Memória RAM atual não é suficiente para os softwares instalados.';
+        RAISE NOTICE '  Sugerimos um upgrade de RAM (atual: %, necessário: %).', v_ram_total, v_ram_usado;
+    ELSE
+        RAISE NOTICE '  A Memória RAM atual é suficiente para os softwares instalados.';
+    END IF;
+
+END;
+$$;
+
